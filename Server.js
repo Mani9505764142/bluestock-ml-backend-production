@@ -1,43 +1,9 @@
-// Server.js - Updated with custom DNS resolver for Supabase
+// Server.js - Updated with simplified Supabase connection for pooler URL
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
-const dns = require('dns');
-const https = require('https');
-
-// Custom DNS resolver using Google and Cloudflare DNS
-const customResolver = new dns.Resolver();
-customResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-
-// Custom lookup function for DNS resolution
-const customLookup = (hostname, options, callback) => {
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-
-  console.log(`🔍 DNS Lookup for: ${hostname}`);
-  
-  customResolver.resolve4(hostname, (err, addresses) => {
-    if (err) {
-      console.error(`❌ DNS resolution failed for ${hostname}:`, err.message);
-      // Fallback to default DNS
-      return dns.lookup(hostname, options, callback);
-    }
-    
-    console.log(`✅ DNS resolved ${hostname} to: ${addresses[0]}`);
-    callback(null, addresses[0], 4);
-  });
-};
-
-// Custom HTTPS agent with DNS override
-const customAgent = new https.Agent({
-  lookup: customLookup,
-  keepAlive: true,
-  maxSockets: 10
-});
 
 const app = express();
 
@@ -66,7 +32,7 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ✅ SUPABASE CONNECTION with Custom DNS Resolution
+// ✅ SUPABASE CONNECTION (Simplified for Pooler URL)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -75,40 +41,14 @@ let databaseConnected = false;
 
 try {
   if (supabaseUrl && supabaseKey) {
-    // Create Supabase client with custom DNS resolver
     supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        detectSessionInUrl: false
-      },
-      realtime: {
-        enabled: false
-      },
-      global: {
-        headers: {
-          'user-agent': 'render-dns-resolver'
-        },
-        fetch: (url, options = {}) => {
-          return fetch(url, {
-            ...options,
-            agent: url.startsWith('https:') ? customAgent : undefined
-          }).catch(error => {
-            console.error('❌ Fetch error details:', {
-              message: error.message,
-              code: error.code,
-              errno: error.errno,
-              syscall: error.syscall,
-              hostname: error.hostname
-            });
-            throw error;
-          });
-        }
-      }
+      auth: { persistSession: false },
+      realtime: { enabled: false }
     });
     
-    console.log('✅ Supabase client initialized with custom DNS resolver');
+    console.log('✅ Supabase client initialized with pooler URL');
     
-    // Test connection with enhanced error logging
+    // Test connection
     supabase.from('companies')
       .select('count(*)')
       .single()
@@ -119,12 +59,7 @@ try {
       })
       .catch((error) => {
         console.warn('⚠️ Supabase connection failed - using fallback data');
-        console.error('❌ Full connection error:', {
-          message: error.message,
-          details: error.details || 'No additional details',
-          hint: error.hint || 'No hint provided',
-          code: error.code || 'No error code'
-        });
+        console.error('❌ Connection error:', error.message);
         databaseConnected = false;
       });
   } else {
