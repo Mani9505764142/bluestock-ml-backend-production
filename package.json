@@ -1,0 +1,40 @@
+{
+  "name": "bluestock-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Bluestock ML financial intelligence platform",
+<<<<<<< HEAD
+  "main": "Server.js",
+  "scripts": {
+    "start": "node Server.js",
+    "dev": "nodemon Server.js"
+=======
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js"
+>>>>>>> 6c35ccb72fc83ac722dff0b38c84564de8df5dcd
+  },
+  "keywords": [
+    "financial",
+    "analysis",
+    "backend",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+<<<<<<< HEAD
+    "@supabase/supabase-js": "^2.56.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+=======
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mysql2": "^3.14.3"
+>>>>>>> 6c35ccb72fc83ac722dff0b38c84564de8df5dcd
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

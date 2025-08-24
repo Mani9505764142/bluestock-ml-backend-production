@@ -1,0 +1,36 @@
+{
+  "status": "success",
+  "timestamp": "2025-08-20T04:06:00Z",
+  "data": [
+    {
+      "id": "TCS",
+      "company_name": "Tata Consultancy Services",
+      "company_logo": "https://bluemutualfund.in/images/tcs_logo.png",
+      "about_company": "Tata Consultancy Services is an Indian multinational information technology services and consulting company headquartered in Mumbai.",
+      "sector": "Information Technology",
+      "website": "https://www.tcs.com",
+      "nse_profile": "https://www.nseindia.com/get-quotes/equity?symbol=TCS",
+      "bse_profile": "https://www.bseindia.com/stock-share-price/tata-consultancy-services-ltd/tcs/532540/"
+    },
+    {
+      "id": "RELIANCE",
+      "company_name": "Reliance Industries Limited",
+      "company_logo": "https://bluemutualfund.in/images/reliance_logo.png",
+      "about_company": "Reliance Industries Limited is an Indian multinational conglomerate company, headquartered in Mumbai.",
+      "sector": "Oil & Gas",
+      "website": "https://www.ril.com",
+      "nse_profile": "https://www.nseindia.com/get-quotes/equity?symbol=RELIANCE",
+      "bse_profile": "https://www.bseindia.com/stock-share-price/reliance-industries-ltd/reliance/500325/"
+    },
+    {
+      "id": "HDFCBANK",
+      "company_name": "HDFC Bank Limited",
+      "company_logo": "https://bluemutualfund.in/images/hdfc_logo.png",
+      "about_company": "HDFC Bank Limited is an Indian banking and financial services company headquartered in Mumbai.",
+      "sector": "Banking & Financial Services",
+      "website": "https://www.hdfcbank.com",
+      "nse_profile": "https://www.nseindia.com/get-quotes/equity?symbol=HDFCBANK",
+      "bse_profile": "https://www.bseindia.com/stock-share-price/hdfc-bank-ltd/hdfcbank/500180/"
+    }
+  ]
+}

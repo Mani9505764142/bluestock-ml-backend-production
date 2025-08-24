@@ -1,0 +1,43 @@
+{
+  "status": "success",
+  "timestamp": "2025-08-20T04:06:00Z",
+  "data": {
+    "company": {
+      "id": "TCS",
+      "company_name": "Tata Consultancy Services",
+      "company_logo": "https://bluemutualfund.in/images/tcs_logo.png",
+      "about_company": "Tata Consultancy Services is an Indian multinational information technology services and consulting company headquartered in Mumbai.",
+      "website": "https://www.tcs.com",
+      "nse_profile": "https://www.nseindia.com/get-quotes/equity?symbol=TCS",
+      "bse_profile": "https://www.bseindia.com/stock-share-price/tata-consultancy-services-ltd/tcs/532540/"
+    },
+    "financial_metrics": {
+      "roce_percentage": 25.40,
+      "roe_percentage": 28.70,
+      "book_value": 145.80,
+      "face_value": 1.00
+    },
+    "ml_analysis": {
+      "strengths": [
+        {
+          "insight": "High Return on Capital Employed (25.4%)",
+          "confidence": 92.5
+        },
+        {
+          "insight": "Strong market position in IT services", 
+          "confidence": 88.0
+        }
+      ],
+      "risks": [
+        {
+          "insight": "Exposure to currency fluctuation risks",
+          "confidence": 78.5
+        },
+        {
+          "insight": "Intense competition in IT services sector",
+          "confidence": 85.0
+        }
+      ]
+    }
+  }
+}
