@@ -1,5 +1,5 @@
 // TEMPORARY SSL FIX - Add this line first
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 
 // Server.js - Updated with dotenv configuration for Supabase
 require('dotenv').config();
