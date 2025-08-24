@@ -1,5 +1,6 @@
 // database/supabase.js
 import { createClient } from '@supabase/supabase-js';
+import https from 'https';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,7 +12,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create HTTPS agent to handle SSL certificate issues (for testing)
+const httpsAgent = new https.Agent({ 
+  rejectUnauthorized: false 
+});
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        agent: httpsAgent
+      });
+    }
+  }
+});
 
 // Test connection
 export const testSupabaseConnection = async () => {
