@@ -12,11 +12,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Create HTTPS agent to handle SSL certificate issues (for testing)
+// Create custom HTTPS agent to bypass SSL verification (testing only)
 const httpsAgent = new https.Agent({ 
-  rejectUnauthorized: false 
+  rejectUnauthorized: false,
+  keepAlive: true
 });
 
+// Create Supabase client with custom fetch that uses HTTPS agent
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   global: {
     fetch: (url, options = {}) => {
@@ -31,6 +33,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Test connection
 export const testSupabaseConnection = async () => {
   try {
+    console.log('🔄 Testing Supabase connection...');
     const { data, error } = await supabase
       .from('companies')
       .select('count(*)')
