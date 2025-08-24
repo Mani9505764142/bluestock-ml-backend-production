@@ -1,13 +1,43 @@
-// Server.js - Updated with IPv4 optimization for Supabase
+// Server.js - Updated with custom DNS resolver for Supabase
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const dns = require('dns');
+const https = require('https');
 
-// Force IPv4 DNS resolution for Node.js
-dns.setDefaultResultOrder('ipv4first');
+// Custom DNS resolver using Google and Cloudflare DNS
+const customResolver = new dns.Resolver();
+customResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+
+// Custom lookup function for DNS resolution
+const customLookup = (hostname, options, callback) => {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  console.log(`🔍 DNS Lookup for: ${hostname}`);
+  
+  customResolver.resolve4(hostname, (err, addresses) => {
+    if (err) {
+      console.error(`❌ DNS resolution failed for ${hostname}:`, err.message);
+      // Fallback to default DNS
+      return dns.lookup(hostname, options, callback);
+    }
+    
+    console.log(`✅ DNS resolved ${hostname} to: ${addresses[0]}`);
+    callback(null, addresses[0], 4);
+  });
+};
+
+// Custom HTTPS agent with DNS override
+const customAgent = new https.Agent({
+  lookup: customLookup,
+  keepAlive: true,
+  maxSockets: 10
+});
 
 const app = express();
 
@@ -24,7 +54,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:5174',
-    'https://warm-melomakarona-61cb3e.netlify.app',  // Your Netlify frontend
+    'https://warm-melomakarona-61cb3e.netlify.app',
     'https://bluestock-ml-analysis.vercel.app',    
     'https://bluestock-ml-analysis-g85a.vercel.app'
   ],
@@ -36,7 +66,7 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ✅ SUPABASE CONNECTION (IPv4 optimized for Render)
+// ✅ SUPABASE CONNECTION with Custom DNS Resolution
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -45,7 +75,7 @@ let databaseConnected = false;
 
 try {
   if (supabaseUrl && supabaseKey) {
-    // Create Supabase client with IPv4 optimization
+    // Create Supabase client with custom DNS resolver
     supabase = createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
@@ -56,24 +86,29 @@ try {
       },
       global: {
         headers: {
-          'user-agent': 'render-ipv4-client'
+          'user-agent': 'render-dns-resolver'
         },
         fetch: (url, options = {}) => {
           return fetch(url, {
             ...options,
-            // Force IPv4 resolution
-            family: 4
+            agent: url.startsWith('https:') ? customAgent : undefined
           }).catch(error => {
-            console.error('❌ Fetch error details:', error);
+            console.error('❌ Fetch error details:', {
+              message: error.message,
+              code: error.code,
+              errno: error.errno,
+              syscall: error.syscall,
+              hostname: error.hostname
+            });
             throw error;
           });
         }
       }
     });
     
-    console.log('✅ Supabase client initialized with IPv4 optimization');
+    console.log('✅ Supabase client initialized with custom DNS resolver');
     
-    // Test connection with detailed error logging
+    // Test connection with enhanced error logging
     supabase.from('companies')
       .select('count(*)')
       .single()
@@ -84,7 +119,12 @@ try {
       })
       .catch((error) => {
         console.warn('⚠️ Supabase connection failed - using fallback data');
-        console.error('❌ Full error details:', error);
+        console.error('❌ Full connection error:', {
+          message: error.message,
+          details: error.details || 'No additional details',
+          hint: error.hint || 'No hint provided',
+          code: error.code || 'No error code'
+        });
         databaseConnected = false;
       });
   } else {
@@ -93,7 +133,7 @@ try {
   }
 } catch (error) {
   console.warn('⚠️ Supabase initialization failed - using fallback mode');
-  console.error('❌ Initialization error:', error);
+  console.error('❌ Initialization error:', error.message);
   databaseConnected = false;
 }
 
