@@ -1,12 +1,13 @@
-// TEMPORARY SSL FIX - Add this line first
-
-
-// Server.js - Updated with dotenv configuration for Supabase
+// Server.js - Updated with IPv4 optimization for Supabase
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const dns = require('dns');
+
+// Force IPv4 DNS resolution for Node.js
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 
@@ -35,7 +36,7 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 
-// ✅ SUPABASE CONNECTION (replacing MySQL)
+// ✅ SUPABASE CONNECTION (IPv4 optimized for Render)
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -44,10 +45,35 @@ let databaseConnected = false;
 
 try {
   if (supabaseUrl && supabaseKey) {
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('✅ Supabase client initialized');
+    // Create Supabase client with IPv4 optimization
+    supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        detectSessionInUrl: false
+      },
+      realtime: {
+        enabled: false
+      },
+      global: {
+        headers: {
+          'user-agent': 'render-ipv4-client'
+        },
+        fetch: (url, options = {}) => {
+          return fetch(url, {
+            ...options,
+            // Force IPv4 resolution
+            family: 4
+          }).catch(error => {
+            console.error('❌ Fetch error details:', error);
+            throw error;
+          });
+        }
+      }
+    });
     
-    // Test connection
+    console.log('✅ Supabase client initialized with IPv4 optimization');
+    
+    // Test connection with detailed error logging
     supabase.from('companies')
       .select('count(*)')
       .single()
@@ -58,7 +84,7 @@ try {
       })
       .catch((error) => {
         console.warn('⚠️ Supabase connection failed - using fallback data');
-        console.warn('Error:', error.message);
+        console.error('❌ Full error details:', error);
         databaseConnected = false;
       });
   } else {
@@ -67,6 +93,7 @@ try {
   }
 } catch (error) {
   console.warn('⚠️ Supabase initialization failed - using fallback mode');
+  console.error('❌ Initialization error:', error);
   databaseConnected = false;
 }
 
