@@ -49,14 +49,16 @@ try {
     console.log('✅ Supabase client initialized with pooler URL');
     
     // Test connection
-    supabase.from('companies')
-      .select('count(*)')
-      .single()
-      .then(({ data, error }) => {
-        if (error) throw error;
-        console.log(`✅ Supabase Connected - Companies: ${data.count}`);
-        databaseConnected = true;
-      })
+    
+      // Test connection
+supabase.from('companies')
+  .select('*', { count: 'exact', head: true })
+  .then(({ count, error }) => {
+    if (error) throw error;
+    console.log(`✅ Supabase Connected - Companies: ${count}`);
+    databaseConnected = true;
+  })
+
       .catch((error) => {
         console.warn('⚠️ Supabase connection failed - using fallback data');
         console.error('❌ Connection error:', error.message);
