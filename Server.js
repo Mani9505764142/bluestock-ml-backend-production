@@ -1,4 +1,4 @@
-// Server.js - Updated with simple queries to fetch real data from Supabase
+// Server.js - Updated with proper pros/cons handling
 require('dotenv').config();
 
 const express = require('express');
@@ -20,7 +20,7 @@ app.use(cors({
   origin: [
     'http://localhost:5173', 
     'http://localhost:5174',
-    'https://warm-melomakarona-61cb3e.netlify.app',
+    'https://bluestock-analysis.netlify.app',
     'https://bluestock-ml-analysis.vercel.app',    
     'https://bluestock-ml-analysis-g85a.vercel.app'
   ],
@@ -207,7 +207,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ✅ FIXED: GET ALL COMPANIES - Simple query without nested relationships
+// ✅ GET ALL COMPANIES with explicit link field selection
 app.get('/api/companies/all', async (req, res) => {
   if (!databaseConnected || !supabase) {
     return res.json({
@@ -222,10 +222,22 @@ app.get('/api/companies/all', async (req, res) => {
   }
 
   try {
-    // Simple query - NO nested relationships
+    // ✅ Explicitly select ALL required fields including link fields
     const { data, error } = await supabase
       .from('companies')
-      .select('*')
+      .select(`
+        id, 
+        company_name, 
+        roe_percentage, 
+        roce_percentage, 
+        face_value, 
+        book_value, 
+        about_company, 
+        website, 
+        nse_profile, 
+        bse_profile, 
+        chart_link
+      `)
       .order('company_name');
 
     if (error) {
@@ -235,17 +247,33 @@ app.get('/api/companies/all', async (req, res) => {
 
     console.log(`✅ Successfully fetched ${data.length} companies from database`);
 
-    // Map real database fields to UI format
-    const companies = data.map(company => ({
-      id: company.id,
-      company_name: company.company_name,
-      roe_percentage: company.roe_percentage || 34.90,
-      roce_percentage: company.roce_percentage || 46.00,
-      revenue: company.face_value || 10,
-      netProfit: 44324,
-      operatingMargin: 27.2,
-      bookValue: company.book_value || 1657
-    }));
+    // ✅ Map with ALL link fields included
+    const companies = data.map(company => {
+      const roe = company.roe_percentage || 20;
+      const bookValue = company.book_value || 1000;
+      
+      const calculatedNetProfit = Math.floor((roe / 100) * bookValue * 100);
+      const calculatedOperatingMargin = Math.min(roe * 1.2, 50);
+
+      return {
+        id: company.id,
+        company_name: company.company_name,
+        
+        // ✅ All descriptive/link fields explicitly included
+        about_company: company.about_company || '',
+        website: company.website || '',
+        nse_profile: company.nse_profile || '',
+        bse_profile: company.bse_profile || '',
+        chart_link: company.chart_link || '',
+        
+        roe_percentage: company.roe_percentage || 34.90,
+        roce_percentage: company.roce_percentage || 46.00,
+        revenue: company.face_value || 10,
+        netProfit: calculatedNetProfit,
+        operatingMargin: parseFloat(calculatedOperatingMargin.toFixed(2)),
+        bookValue: company.book_value || 1657
+      };
+    });
 
     res.json({
       success: true,
@@ -267,7 +295,7 @@ app.get('/api/companies/all', async (req, res) => {
   }
 });
 
-// ✅ GET SPECIFIC COMPANY - Simple query approach
+// ✅ GET SPECIFIC COMPANY - FIXED PROS/CONS HANDLING
 app.get('/api/company/:id', async (req, res) => {
   const companyId = req.params.id.toUpperCase();
   
@@ -290,7 +318,7 @@ app.get('/api/company/:id', async (req, res) => {
   }
 
   try {
-    // Get company details - simple query
+    // Get company details
     const { data: companyData, error: companyError } = await supabase
       .from('companies')
       .select('*')
@@ -322,7 +350,7 @@ app.get('/api/company/:id', async (req, res) => {
       .eq('company_id', companyId)
       .order('id');
 
-    // Get pros and cons separately
+    // ✅ FIXED: Get pros and cons with better handling
     const { data: prosConsData } = await supabase
       .from('prosandcons')
       .select('*')
@@ -351,16 +379,30 @@ app.get('/api/company/:id', async (req, res) => {
       company.book_value = company.book_value || '280';
     }
 
-    // Add pros and cons
+    // ✅ FIXED: Proper pros and cons handling with NULL filtering
     if (prosConsData && prosConsData.length > 0) {
-      const allPros = prosConsData.map(item => item.pros).filter(p => p).join('. ');
-      const allCons = prosConsData.map(item => item.cons).filter(c => c).join('. ');
+      console.log(`📝 Found ${prosConsData.length} pros/cons entries for ${companyId}`);
+      
+      // Filter out NULL, undefined, and empty strings, then join with '. '
+      const validPros = prosConsData
+        .map(item => item.pros)
+        .filter(pros => pros !== null && pros !== undefined && pros.trim() !== '')
+        .join('. ');
+        
+      const validCons = prosConsData
+        .map(item => item.cons)
+        .filter(cons => cons !== null && cons !== undefined && cons.trim() !== '')
+        .join('. ');
+      
+      console.log(`📝 ${companyId} - Pros: ${validPros.length > 0 ? 'Found real data' : 'No valid pros'}`);
+      console.log(`📝 ${companyId} - Cons: ${validCons.length > 0 ? 'Found real data' : 'No valid cons'}`);
       
       company.prosandcons = [{
-        pros: allPros || 'Strong financial fundamentals based on analysis.',
-        cons: allCons || 'Standard market and competitive risks.'
+        pros: validPros || 'Strong financial fundamentals based on analysis.',
+        cons: validCons || 'Standard market and competitive risks apply.'
       }];
     } else {
+      console.log(`📝 No pros/cons data found for ${companyId} - using fallback`);
       company.prosandcons = [{
         pros: 'Strong financial fundamentals based on analysis.',
         cons: 'Standard market and competitive risks apply.'
@@ -389,7 +431,7 @@ app.get('/api/company/:id', async (req, res) => {
   }
 });
 
-// ✅ FIXED: COMPANY COMPARISON - Simple query approach
+// ✅ COMPANY COMPARISON with explicit link fields
 app.get('/api/compare', async (req, res) => {
   const { companies } = req.query;
   
@@ -422,24 +464,51 @@ app.get('/api/compare', async (req, res) => {
   }
 
   try {
-    // Simple query for company comparison
     const { data, error } = await supabase
       .from('companies')
-      .select('*')
+      .select(`
+        id, 
+        company_name, 
+        roe_percentage, 
+        roce_percentage, 
+        face_value, 
+        book_value,
+        about_company,
+        website,
+        nse_profile,
+        bse_profile,
+        chart_link
+      `)
       .in('id', companyList.map(id => id.trim().toUpperCase()));
 
     if (error) throw error;
 
-    const comparisonData = data.map(company => ({
-      id: company.id,
-      name: company.company_name,
-      roe: company.roe_percentage || 20,
-      roce: company.roce_percentage || 22,
-      revenue: company.face_value || 240893,
-      netProfit: 44324,
-      operatingMargin: 27.2,
-      bookValue: company.book_value || 280
-    }));
+    const comparisonData = data.map(company => {
+      const roe = company.roe_percentage || 20;
+      const bookValue = company.book_value || 1000;
+      
+      const calculatedNetProfit = Math.floor((roe / 100) * bookValue * 100);
+      const calculatedOperatingMargin = Math.min(roe * 1.2, 50);
+
+      return {
+        id: company.id,
+        name: company.company_name,
+        
+        // Link fields for comparison
+        about_company: company.about_company || '',
+        website: company.website || '',
+        nse_profile: company.nse_profile || '',
+        bse_profile: company.bse_profile || '',
+        chart_link: company.chart_link || '',
+        
+        roe: company.roe_percentage || 20,
+        roce: company.roce_percentage || 22,
+        revenue: company.face_value || 240893,
+        netProfit: calculatedNetProfit,
+        operatingMargin: parseFloat(calculatedOperatingMargin.toFixed(2)),
+        bookValue: company.book_value || 280
+      };
+    });
 
     res.json({
       success: true,
